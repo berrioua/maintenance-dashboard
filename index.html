@@ -417,14 +417,12 @@ h1.ptitle{font-size:19px;font-weight:700;margin-bottom:3px}
 <!-- ===== OPERATEURS ===== -->
 <div class="page" id="page-operateurs">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <div><h1 class="ptitle">Opérateurs & Techniciens</h1><p class="psub" style="margin-bottom:0">37 techniciens actifs — 3 équipes de maintenance</p></div>
+    <div><h1 class="ptitle">Opérateurs & Techniciens</h1><p class="psub" style="margin-bottom:0">37 techniciens actifs</p></div>
     <div style="display:flex;gap:7px">
-      <select class="fc" style="width:auto" id="op-eq" onchange="renderOps()"><option value="">Toutes les équipes</option><option>Équipe A</option><option>Équipe B</option><option>Équipe C</option></select>
       <select class="fc" style="width:auto" id="op-sp" onchange="renderOps()"><option value="">Toutes spécialités</option><option>Mécanicien</option><option>Électricien</option><option>Soudeur</option><option>Plombier</option><option>Agent maintenance</option><option>Aide électricien</option><option>Aide mécanicien</option><option>Tourneur</option><option>Responsable maintenance</option><option>Directeur maintenance</option></select>
       <input type="text" class="fc" style="width:160px" id="op-sr" placeholder="Rechercher..." oninput="renderOps()">
     </div>
   </div>
-  <div class="g3" style="margin-bottom:14px" id="equipes-cards"></div>
   <div class="card">
     <table class="dtbl"><thead><tr><th>Matricule</th><th>Nom & Prénom</th><th>Spécialité</th><th>Équipe</th><th>Téléphone</th></tr></thead>
     <tbody id="ops-tbody"></tbody></table>
@@ -905,7 +903,7 @@ function showPage(id,btn){
   if(id==='planning') renderCal();
   if(id==='ateliers'){fillFilters();renderAteliers();}
   if(id==='fiches') renderModeles();
-  if(id==='operateurs'){renderEquipes();renderOps();}
+  if(id==='operateurs'){renderOps();}
 }
 
 function openMod(id){document.getElementById(id).classList.add('open');}
@@ -1246,8 +1244,8 @@ function renderAteliers(){
       html+='<td><span class="tag t'+e.crit+'" style="font-size:10px">'+e.crit+'</span></td>';
       html+='<td style="font-size:11px;color:var(--txm)">'+(e.tech||'—')+'</td>';
       html+='<td><div style="display:flex;gap:3px">';
-      html+='<button class="btn btnsm" onclick="toast(\'Modifier: '+e.code+'\')">Modif.</button>';
-      html+='<button class="btn btnd" onclick="toast(\'Supprimer: '+e.code+'\')">Suppr.</button>';
+      html+='<button class="btn btnsm" style="border-color:var(--b400);color:var(--b600)" onclick="modifierEquip(\''+atelier.id+'\',\''+e.code+'\')">✏ Modifier</button>';
+      html+='<button class="btn btnd" onclick="supprimerEquip(\''+atelier.id+'\',\''+e.code+'\')">✕ Suppr.</button>';
       html+='</div></td></tr>';
     });
     html+='</tbody></table></div>';
@@ -1262,31 +1260,7 @@ function renderAteliers(){
 var SPEC_CLR={'Mecanicien':'tb','Electricien':'ta','Soudeur':'tc','Plombier':'tt','Agent maintenance':'ty','Aide electricien':'ty','Aide mecanicien':'ty','Tourneur':'tp','Responsable maintenance':'tr2','Directeur maintenance':'tr2'};
 var EQ_CLR={'Equipe A':'tb','Equipe B':'tg','Equipe C':'tp'};
 
-function renderEquipes(){
-  var eqs=['Equipe A','Equipe B','Equipe C'];
-  var cols=['bl','gn',''];
-  var dotcols=['var(--b400)','var(--g400)','var(--p400)'];
-  var html='';
-  eqs.forEach(function(eq,i){
-    var mb=TECHNICIENS.filter(function(t){return t.equipe===eq;});
-    var specs=[...new Set(mb.map(function(t){return t.spec;}))];
-    html+='<div class="card"><div class="stitle">';
-    html+='<div style="width:9px;height:9px;border-radius:50%;background:'+dotcols[i]+'"></div>';
-    html+=eq+' <span class="tag '+(EQ_CLR[eq]||'ty')+'">'+mb.length+' techniciens</span></div>';
-    html+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px">';
-    specs.forEach(function(s){html+='<span class="tag '+(SPEC_CLR[s]||'ty')+'" style="font-size:10px">'+s+'</span>';});
-    html+='</div>';
-    mb.forEach(function(m){
-      var ini=m.nom.split(' ').map(function(x){return x[0]||'';}).join('').substring(0,2);
-      html+='<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--brd)">';
-      html+='<div style="width:26px;height:26px;border-radius:50%;background:var(--b50);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--b800);flex-shrink:0">'+ini+'</div>';
-      html+='<div><div style="font-size:11px;font-weight:600">'+m.nom+'</div><div style="font-size:10px;color:var(--txm)">'+m.spec+'</div></div>';
-      html+='<span style="margin-left:auto;font-size:10px;color:var(--txm)">'+m.tel+'</span></div>';
-    });
-    html+='</div>';
-  });
-  document.getElementById('equipes-cards').innerHTML=html;
-}
+function renderEquipes(){}
 
 function renderOps(){
   var fEq=(document.getElementById('op-eq')||{}).value||'';
@@ -1660,6 +1634,51 @@ function sauvegarderLocalement(){
   });
 }
 
+function modifierEquip(atelierId, code){
+  var at=ATELIERS.find(function(a){return a.id===atelierId;});
+  if(!at) return;
+  var eq=at.equips.find(function(e){return e.code===code;});
+  if(!eq) return;
+  document.getElementById('edit-eq-atelier-id').value=atelierId;
+  document.getElementById('edit-eq-orig-code').value=code;
+  document.getElementById('edit-eq-code').value=eq.code;
+  document.getElementById('edit-eq-name').value=eq.nom;
+  document.getElementById('edit-eq-freq').value=eq.freq;
+  document.getElementById('edit-eq-crit').value=eq.crit||'C';
+  // Fill technicien select
+  var sel=document.getElementById('edit-eq-tech');
+  sel.innerHTML='<option value="">— Non assigné —</option>';
+  TECHNICIENS.forEach(function(t){sel.innerHTML+='<option value="'+t.nom+'"'+(eq.tech===t.nom?' selected':'')+'>'+t.nom+' ('+t.spec+')</option>';});
+  openMod('mod-edit-equip');
+}
+function sauvegarderEquip(){
+  var atelierId=document.getElementById('edit-eq-atelier-id').value;
+  var origCode=document.getElementById('edit-eq-orig-code').value;
+  var newCode=document.getElementById('edit-eq-code').value.trim();
+  var newNom=document.getElementById('edit-eq-name').value.trim();
+  var newFreq=document.getElementById('edit-eq-freq').value;
+  var newCrit=document.getElementById('edit-eq-crit').value;
+  var newTech=document.getElementById('edit-eq-tech').value;
+  if(!newCode||!newNom){toast('Code et désignation requis');return;}
+  var at=ATELIERS.find(function(a){return a.id===atelierId;});
+  if(!at) return;
+  var eq=at.equips.find(function(e){return e.code===origCode;});
+  if(!eq) return;
+  eq.code=newCode; eq.nom=newNom; eq.freq=newFreq; eq.crit=newCrit; eq.tech=newTech;
+  closeMod('mod-edit-equip');
+  fillFilters(); renderAteliers();
+  toast('Equipement '+newCode+' modifié !');
+}
+function supprimerEquip(atelierId, code){
+  if(!confirm('Supprimer l\'équipement "'+code+'" ?')) return;
+  var at=ATELIERS.find(function(a){return a.id===atelierId;});
+  if(!at) return;
+  var idx=at.equips.findIndex(function(e){return e.code===code;});
+  if(idx!==-1) at.equips.splice(idx,1);
+  fillFilters(); renderAteliers(); genPlanning();
+  toast('Equipement supprimé');
+}
+
 // ============================================================
 // INIT
 // ============================================================
@@ -1674,6 +1693,29 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script>
+<!-- MODAL MODIFIER EQUIPEMENT -->
+<div class="mov" id="mod-edit-equip">
+  <div class="modal">
+    <button class="mclose" onclick="closeMod('mod-edit-equip')">&#x2715;</button>
+    <div class="mtitle">Modifier l'équipement</div>
+    <input type="hidden" id="edit-eq-atelier-id">
+    <input type="hidden" id="edit-eq-orig-code">
+    <div class="fr">
+      <div class="fg"><label class="fl">Code</label><input type="text" class="fc" id="edit-eq-code"></div>
+      <div class="fg"><label class="fl">Désignation</label><input type="text" class="fc" id="edit-eq-name"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Fréquence</label><select class="fc" id="edit-eq-freq"><option>Mensuel</option><option>Trimestriel</option><option>Semestriel</option><option>Annuel</option></select></div>
+      <div class="fg"><label class="fl">Criticité</label><select class="fc" id="edit-eq-crit"><option>A</option><option>B</option><option>C</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Technicien</label><select class="fc" id="edit-eq-tech"></select></div>
+    <div class="bg" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn" onclick="closeMod('mod-edit-equip')">Annuler</button>
+      <button class="btn btnp" onclick="sauvegarderEquip()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NOUVEL ATELIER -->
 <div class="mov" id="mod-new-atelier">
   <div class="modal" style="width:520px;max-height:90vh;overflow-y:auto">
