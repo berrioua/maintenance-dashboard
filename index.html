@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:;">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gestion Maintenance Préventive — Céramique Sanitaire</title>
@@ -1560,7 +1561,7 @@ function sauvegarderLocalement(){
   var GITHUB_FILE='index.html';
   var apiUrl='https://api.github.com/repos/'+GITHUB_USER+'/'+GITHUB_REPO+'/contents/'+GITHUB_FILE;
   // Step 1: get current SHA
-  fetch(apiUrl,{headers:{'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}})
+  fetch(apiUrl,{mode:'cors',headers:{'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}})
   .then(function(r){return r.json();})
   .then(function(data){
     var sha=data.sha;
@@ -1603,7 +1604,12 @@ function sauvegarderLocalement(){
   })
   .catch(function(err){
     if(btn){btn.disabled=false;btn.innerHTML=btn.innerHTML.replace('Envoi...','Enregistrer');}
-    toast('Erreur de connexion: '+err.message);
+    var msg=err.message||'';
+    if(msg.indexOf('fetch')!==-1||msg.indexOf('Failed')!==-1||msg.indexOf('NetworkError')!==-1){
+      toast('Brave/Firefox bloque la connexion. Desactivez les shields Brave puis reessayez.');
+    } else {
+      toast('Erreur: '+msg);
+    }
   });
 }
 
