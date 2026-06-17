@@ -1601,44 +1601,69 @@ function sauvegarderNouvelAtelier(){
   toast('Atelier "'+nom+'" cree avec '+equips.length+' equipement(s) !');
 }
 function sauvegarderLocalement(){
-  var data={
-    ateliers: ATELIERS,
-    savedAt: new Date().toISOString()
-  };
-  localStorage.setItem('dashboard_maintenance_save', JSON.stringify(data));
-  // Update button to show saved
   var btn=document.querySelector('button[onclick="sauvegarderLocalement()"]');
   if(btn){
-    btn.style.background='var(--g50)';
-    btn.style.borderColor='var(--g400)';
-    btn.style.color='var(--g800)';
-    btn.innerHTML=btn.innerHTML.replace('Enregistrer','Enregistre !');
-    setTimeout(function(){
-      btn.style.background='';
-      btn.style.borderColor='';
-      btn.style.color='';
-      btn.innerHTML=btn.innerHTML.replace('Enregistre !','Enregistrer');
-    },2000);
+    btn.disabled=true;
+    btn.innerHTML=btn.innerHTML.replace('Enregistrer','Envoi...');
   }
-  toast('Modifications enregistrees !');
-}
-function chargerDepuisLocalStorage(){
-  var raw=localStorage.getItem('dashboard_maintenance_save');
-  if(!raw) return;
-  try{
-    var data=JSON.parse(raw);
-    if(data.ateliers && data.ateliers.length>0){
-      ATELIERS.length=0;
-      data.ateliers.forEach(function(a){ATELIERS.push(a);});
+  // Recuperer le SHA du fichier actuel sur GitHub
+  var GITHUB_TOKEN='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';
+  var GITHUB_USER='berrioua';
+  var GITHUB_REPO='maintenance-dashboard';
+  var GITHUB_FILE='index.html';
+  var apiUrl='https://api.github.com/repos/'+GITHUB_USER+'/'+GITHUB_REPO+'/contents/'+GITHUB_FILE;
+  // Step 1: get current SHA
+  fetch(apiUrl,{headers:{'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    var sha=data.sha;
+    // Step 2: get current HTML and inject updated ATELIERS
+    var html=document.documentElement.outerHTML;
+    var marker1='/*__SAVE_START__*/';
+    var marker2='/*__SAVE_END__*/';
+    var i1=html.indexOf(marker1);
+    var i2=html.indexOf(marker2);
+    var newHtml;
+    if(i1!==-1&&i2!==-1){
+      newHtml=html.substring(0,i1+marker1.length)+'\nvar ATELIERS='+JSON.stringify(ATELIERS)+';\n'+html.substring(i2);
+    } else {
+      newHtml=html;
     }
-  }catch(e){}
+    // Step 3: encode to base64
+    var encoded=btoa(unescape(encodeURIComponent(newHtml)));
+    // Step 4: push to GitHub
+    return fetch(apiUrl,{
+      method:'PUT',
+      headers:{'Authorization':'token '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+      body:JSON.stringify({message:'Mise a jour dashboard '+new Date().toLocaleString('fr-FR'),content:encoded,sha:sha})
+    });
+  })
+  .then(function(r){
+    if(btn){
+      btn.disabled=false;
+      btn.style.background='#EAF3DE';
+      btn.style.borderColor='#639922';
+      btn.style.color='#27500A';
+      btn.innerHTML=btn.innerHTML.replace('Envoi...','Enregistre !');
+      setTimeout(function(){
+        btn.style.background='';
+        btn.style.borderColor='';
+        btn.style.color='';
+        btn.innerHTML=btn.innerHTML.replace('Enregistre !','Enregistrer');
+      },3000);
+    }
+    toast('Modifications publiees ! Visible par tous dans 1-2 minutes.');
+  })
+  .catch(function(err){
+    if(btn){btn.disabled=false;btn.innerHTML=btn.innerHTML.replace('Envoi...','Enregistrer');}
+    toast('Erreur de connexion: '+err.message);
+  });
 }
 
 // ============================================================
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded',function(){
-  chargerDepuisLocalStorage();
   genPlanning();
   initDash();
   renderModeles();
