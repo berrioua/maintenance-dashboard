@@ -1308,6 +1308,7 @@ function renderOps(){
     rows+='<td><span class="tag '+(SPEC_CLR[t.spec]||'ty')+'" style="font-size:10px">'+t.spec+'</span></td>';
     rows+='<td><span class="tag '+(EQ_CLR[t.equipe]||'ty')+'" style="font-size:10px">'+t.equipe+'</span></td>';
     rows+='<td style="font-size:11px;color:var(--txm)">'+t.tel+'</td>';
+    rows+='<td><button class="btn btnd" style="padding:3px 7px" data-mat="'+t.mat+'" onclick="supprimerOperateur(this)">&#x2715;</button></td>';
     rows+='</tr>';
   });
   document.getElementById('ops-tbody').innerHTML=rows;
