@@ -1078,8 +1078,9 @@ function genFichesJour(mode){
 
 function buildFiche(interv,ds){
   // Find real equipment code from ATELIERS
-  var realCode=interv.code;
+  var realCode='';
   var realFiche=interv.fiche;
+  // Try exact match first
   ATELIERS.forEach(function(a){
     a.equips.forEach(function(e){
       if(e.nom===interv.nom||e.code===interv.code){
@@ -1088,6 +1089,22 @@ function buildFiche(interv,ds){
       }
     });
   });
+  // If no exact match, try fuzzy: check if ATELIERS equip name contains words from interv name
+  if(!realCode){
+    var iWords=interv.nom.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(' ').filter(function(w){return w.length>2;});
+    var bestScore=0; var bestCode=''; var bestFiche='';
+    ATELIERS.forEach(function(a){
+      a.equips.forEach(function(e){
+        var eName=e.nom.toLowerCase();
+        var score=0;
+        iWords.forEach(function(w){if(eName.indexOf(w)!==-1) score++;});
+        if(score>bestScore){bestScore=score;bestCode=e.code;bestFiche=e.fiche||'';}
+      });
+    });
+    if(bestScore>0){realCode=bestCode;if(bestFiche&&!realFiche)realFiche=bestFiche;}
+  }
+  // Final fallback: keep original interv code but mark it
+  if(!realCode) realCode=interv.code;
   var ref=realFiche||interv.fiche;
   // Auto-detect fiche if not assigned
   if(!ref||!FICHES[ref]){
